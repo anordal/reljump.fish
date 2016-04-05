@@ -49,7 +49,7 @@ function jump
 			else
 				set dst $dst/$path
 			end
-			if not set i (stat -c '%i' $dst)
+			if not set i (stat -L $dst)
 				return 1
 			end
 		end
