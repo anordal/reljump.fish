@@ -30,4 +30,5 @@ jump --tutorial
 Note, this command is fishy — all in one command that takes options. Hopefully discoverable ;-)
 
 # Installation
-Copy `jump.fish` into `~/.config/fish/functions/`.
+* Copy `functions/jump.fish` into `~/.config/fish/functions/`.
+* Copy `completions/jump.fish` into `~/.config/fish/completions/`.

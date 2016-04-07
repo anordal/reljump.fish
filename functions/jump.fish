@@ -68,6 +68,8 @@ function jump
 				end
 			end
 			printf '%s\n' "$dst"
+		case --get-markpath
+			echo $markpath
 		case -l --ls
 			set -l oldcollate $LC_COLLATE
 			set -x LC_COLLATE C
