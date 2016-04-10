@@ -15,49 +15,59 @@ function jump
 	switch $argv[1]
 		case -
 		case '-*'
-			set have_option
-	end
-
-	if not set -q have_option
-		set -l dst .
-		for arg in $argv
-			switch $arg
-				case -
-					if test $dst = .
-						set dst $PWD
-					end
-					read -p "set_color $fish_color_cwd; printf 'cd '; set_color normal" -sc $dst path
-					set dst .
-				case '*/*'
-					set path $arg
-				case '*'
-					if not set path (readlink $markpath/$arg)
-						echo "No such mark: $arg" >&2
-						return 1
-					end
-			end
-			switch $path
-				case '//scm/*'
-					set path (printf '%s' $path | tail -c+7)
-					if not set path (git -C $dst rev-parse --show-cdup)"$path"
-						echo "Not in a recognised scm repo" >&2
-						return 1
-					end
-			end
-			if test $dst = .
-				set dst $path
+			set op $argv[1]
+			# shift 1
+			if test (count $argv) -gt 1
+				set argv $argv[2..-1]
 			else
-				set dst $dst/$path
+				set argv
 			end
-			if not set i (stat -L $dst)
-				return 1
-			end
-		end
-		cd $dst
-		return $status
+	end
+	if not set -q op
+		set op --
 	end
 
-	switch $argv[1]
+	switch $op
+		case --
+			if set -l dst (jump -p $argv)
+				cd $dst
+			end
+		case -p --print
+			set -l dst .
+			for arg in $argv
+				switch $arg
+					case -
+						if test $dst = .
+							set dst $PWD
+						end
+						read -p "set_color $fish_color_cwd; printf 'cd '; set_color normal" -sc $dst path
+						set dst .
+					case '*/*'
+						set path $arg
+					case '*'
+						if not set path (readlink $markpath/$arg)
+							echo "No such mark: $arg" >&2
+							return 1
+						end
+				end
+				switch $path
+					case '//scm/*'
+						set path (printf '%s' $path | tail -c+7)
+						if not set path (git -C $dst rev-parse --show-cdup ^/dev/null)"$path"
+							echo "Not in a recognised scm repo" >&2
+							return 1
+						end
+				end
+				if test $dst = .
+					set dst $path
+				else
+					set dst $dst/$path
+				end
+				if not stat -L $dst >/dev/null
+					return 1
+				end
+			end
+			printf '%s\n' "$dst"
 		case -l --ls
 			set -l oldcollate $LC_COLLATE
 			set -x LC_COLLATE C
@@ -76,27 +86,39 @@ function jump
 			end
 			set -x LC_COLLATE $oldcollate
 		case -r --rm
-			if test (count $argv) -gt 1
-				rm $markpath/$argv[2..-1]
+			if test (count $argv) -gt 0
+				rm $markpath/$argv
 			end
 		case -m --mv
-			if test (count $argv) -eq 3
-				mv $markpath/$argv[2..-1]
+			if test (count $argv) -ne 2
+				echo "$op takes 2 operands" >&2
+				return 1
 			end
+			if test -L $markpath/$argv[2]
+				echo "$argv[2] already exists" >&2
+				return 1
+			end
+			mv $markpath/$argv
 		case -s --set
 			mkdir -p $markpath
 			or return 1
-			if test (count $argv) -le 2
-				ln -s $PWD $markpath/$argv[2]
+			if test (count $argv) -eq 1
+				ln -s $PWD $markpath/$argv[1]
+			else if test (count $argv) -eq 2
+				ln -s $argv[2] $markpath/$argv[1]
 			else
-				ln -s $argv[3] $markpath/$argv[2]
-			end
-		case -c --set{scm,vcs}
-			if test (count $argv) -ne 2; or not mkdir -p $markpath
+				echo "$op takes 1 or 2 operands" >&2
 				return 1
 			end
+		case -c --set{scm,vcs}
+			if test (count $argv) -ne 1
+				echo "$op takes 1 operand" >&2
+				return 1
+			end
+			mkdir -p $markpath
+			or return 1
 			# TODO: Detect & support other things than git, if needed
-			ln -s //scm/(git rev-parse --show-prefix) $markpath/$argv[2]
+			ln -s //scm/(git rev-parse --show-prefix) $markpath/$argv[1]
 		case --tutorial
 			_jump_tutorial
 		case '*'
@@ -109,15 +131,16 @@ function jump
 			echo '* editing your current location'
 			echo ''
 			echo 'Usage:'
-			echo 'jump                     List bookmarks'
-			echo 'jump JUMPARGS            Jump to a path constructed from JUMPARGS'
-			echo 'jump -h|--help           Print usage'
-			echo 'jump -r|--rm NAMES       Delete bookmarks named NAMES'
-			echo 'jump -m|--mv OLD NEW     Rename bookmark from OLD to NEW'
-			echo 'jump -s|--set NAME       Bookmark the absolute path to the current directory'
-			echo 'jump -s|--set NAME PATH  Bookmark PATH (use to create a relative bookmark)'
-			echo 'jump -c|--setscm NAME    Bookmark the current directory within an scm repo'
-			echo 'jump    --setvcs NAME    Alias for --setscm'
+			echo 'jump                      List bookmarks'
+			echo 'jump [--] JUMPARGS        Jump to a path constructed from JUMPARGS'
+			echo 'jump -p|--print JUMPARGS  Print the path instead of changing directory'
+			echo 'jump -h|--help            Print usage'
+			echo 'jump -r|--rm NAMES        Delete bookmarks named NAMES'
+			echo 'jump -m|--mv OLD NEW      Rename bookmark from OLD to NEW'
+			echo 'jump -s|--set NAME        Bookmark the absolute path to the current directory'
+			echo 'jump -s|--set NAME PATH   Bookmark PATH (use to create a relative bookmark)'
+			echo 'jump -c|--setscm NAME     Bookmark the current directory within an scm repo'
+			echo 'jump    --setvcs NAME     Alias for --setscm'
 			echo ''
 			echo 'Explanation of JUMPARGS:'
 			echo 'Jump changes directory to the path formed by concatenating each argument'
