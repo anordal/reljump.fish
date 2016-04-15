@@ -31,10 +31,10 @@ function __fish_jump_suggest
 	test $pre = .
 	and set pre
 
-	set dejavu (stat . | grep -Pi '(device|inode)')
+	set dejavu (stat . | grep -Ei '(device|inode)')
 	for i in $candidates
 		set -l path (jump -p $pre/ $i ^/dev/null)
-		and set -l pathstat (stat -L $path | grep -Pi '(device|inode)')
+		and set -l pathstat (stat -L $path | grep -Ei '(device|inode)')
 		and test "$pathstat" != "$dejavu"
 		and printf '%s\n' $i
 	end
