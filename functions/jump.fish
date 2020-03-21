@@ -40,7 +40,7 @@ function jump
 						if test $dst = .
 							set dst $PWD
 						end
-						read -p "set_color $fish_color_cwd; printf 'cd '; set_color normal" -sc $dst path
+						read -p "set_color $fish_color_cwd; printf 'cd '; set_color normal" -c $dst path
 						set dst .
 					case '*/*'
 						set path $arg
