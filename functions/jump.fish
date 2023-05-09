@@ -52,8 +52,8 @@ function jump
 				end
 				switch $path
 					case '//scm/*'
-						set path (printf '%s' $path | tail -c+7)
-						if not set path (git -C $dst rev-parse --show-cdup ^/dev/null)"$path"
+						set path (string sub -s7 $path)
+						if not set path (git -C $dst rev-parse --show-cdup 2>/dev/null)"$path"
 							echo "Not in a recognised scm repo" >&2
 							return 1
 						end
