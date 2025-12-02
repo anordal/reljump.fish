@@ -28,7 +28,7 @@ function __fish_jump_suggest
 			end
 	end
 
-	set pre (jump -p $pre ^/dev/null)
+	set pre (jump -p $pre 2>/dev/null)
 	or return 0
 
 	switch (commandline -t)
@@ -43,7 +43,7 @@ function __fish_jump_suggest
 
 	set dejavu (stat . | grep -Ei '(device|inode)')
 	for i in $candidates
-		set -l path (jump -p $pre/ $i ^/dev/null)
+		set -l path (jump -p $pre/ $i 2>/dev/null)
 		and set -l pathstat (stat -L $path | grep -Ei '(device|inode)')
 		and test "$pathstat" != "$dejavu"
 		and printf '%s\n' $i
